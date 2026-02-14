@@ -1,0 +1,24 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+python-dotenv
+
+# LangChain + LLM
+langchain
+langchain-community
+openai
+tiktoken
+
+# ML / Anomaly Detection
+numpy
+pandas
+scikit-learn
+joblib
+
+# DigitalOcean / Cloud
+boto3
+requests
+
+# Utilities
+loguru
