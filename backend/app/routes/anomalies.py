@@ -18,11 +18,10 @@ from ..services.anomaly_client import detect_anomalies
 from ..services.llm_agent import LLMAgent
 from ..services.log_parser import parse_logs
 from ..utils.helpers import validate_and_read_log_upload
-from .ai.explain import explain_anomaly
-from .ai.incident import generate_incident_report, generate_summary
-from .ai.remediation import suggest_fix
-from .ai.severity import calculate_severity
-
+from ..ai.explain import explain_anomaly
+from ..ai.incident import generate_incident_report, generate_summary
+from ..ai.remediation import suggest_fix
+from ..ai.severity import calculate_severity
 router = APIRouter(prefix="/anomalies", tags=["Anomalies"], dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
 
