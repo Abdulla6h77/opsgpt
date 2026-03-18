@@ -1,5 +1,6 @@
 # OS/editor
 .qodo/
+.cursor/
 .DS_Store
 Thumbs.db
 .vscode/
@@ -12,10 +13,13 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+.env.local
+.env.production
 
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyo
 *.pyd
 *.so

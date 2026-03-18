@@ -62,4 +62,4 @@ if __name__ == "__main__":
         for log in logs:
             f.write(str(log) + "\n")
 
-    print("✅ Sample logs generated: sample_logs.log")
+    print("Sample logs generated: sample_logs.log")
