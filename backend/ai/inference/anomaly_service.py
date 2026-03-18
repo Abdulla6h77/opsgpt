@@ -1,5 +1,5 @@
 """
-anomaly_service.py
+anomaly_service.py — FIXED VERSION
 ==================
 Loads the trained Scikit-learn anomaly detection model and exposes a clean
 `detect()` interface consumed by the FastAPI anomaly routes.

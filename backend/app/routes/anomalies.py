@@ -18,17 +18,16 @@ from ..services.anomaly_client import detect_anomalies
 from ..services.llm_agent import LLMAgent
 from ..services.log_parser import parse_logs
 from ..utils.helpers import validate_and_read_log_upload
-from ai.explain import explain_anomaly
-from ai.incident import generate_incident_report, generate_summary
-from ai.remediation import suggest_fix
-from ai.severity import calculate_severity
+from .ai.explain import explain_anomaly
+from .ai.incident import generate_incident_report, generate_summary
+from .ai.remediation import suggest_fix
+from .ai.severity import calculate_severity
 
 router = APIRouter(prefix="/anomalies", tags=["Anomalies"], dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
 
 
 def _normalize_timestamp(value: object) -> datetime:
-    # Handles strings, datetime, and pandas.Timestamp while forcing tz-aware UTC.
     if hasattr(value, "to_pydatetime"):
         value = value.to_pydatetime()
 
@@ -63,8 +62,6 @@ async def detect(request: Request, file: UploadFile = File(...), db: AsyncSessio
 
     anomalies = detect_anomalies([log.model_dump() for log in logs])
 
-    # Add explanation and severity for every detected anomaly before reporting.
-    
     for log in anomalies:
         log["explanation"] = explain_anomaly(log)
         log["severity"] = calculate_severity(log)
@@ -77,12 +74,15 @@ async def detect(request: Request, file: UploadFile = File(...), db: AsyncSessio
     summary = generate_summary(report)
     ai_analysis = None
     if anomalies:
-        # Optional enrichment layer. Failures never interrupt the pipeline.
-    ai_analysis = LLMAgent().analyze_incident(anomalies, report)
+        try:
+            ai_analysis = LLMAgent().analyze_incident(anomalies, report)
+        except Exception:
+            logger.exception("LLM enrichment failed — continuing without AI analysis")
+
+    # Always initialize before the try block so it's always in scope
     persisted_anomalies = 0
 
     try:
-        # Track upload batch even if no anomalies are detected.
         batch = LogBatch(filename=file.filename or "unknown.log")
         logger.info("Inserting log batch filename='%s'", batch.filename)
         db.add(batch)
@@ -105,7 +105,6 @@ async def detect(request: Request, file: UploadFile = File(...), db: AsyncSessio
 
             for anomaly in anomalies:
                 anomaly_ts = _normalize_timestamp(anomaly.get("timestamp"))
-
                 row = Anomaly(
                     incident_id=incident.id,
                     anomaly_score=float(anomaly.get("anomaly", 1.0)),
@@ -118,7 +117,11 @@ async def detect(request: Request, file: UploadFile = File(...), db: AsyncSessio
             persisted_anomalies = len(anomalies)
 
         await db.commit()
-        logger.info("DB commit successful file='%s' anomalies_persisted=%d", file.filename or "unknown.log", persisted_anomalies)
+        logger.info(
+            "DB commit successful file='%s' anomalies_persisted=%d",
+            file.filename or "unknown.log",
+            persisted_anomalies,
+        )
 
         await db.refresh(batch)
         if anomalies:
